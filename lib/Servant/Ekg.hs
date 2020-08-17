@@ -29,6 +29,8 @@ import           Network.HTTP.Types          (Method)
 import           Network.Wai
 import           Servant.API
 import           Servant.Ekg.Internal
+import           Servant.Multipart           (MultipartForm)
+import           Servant.RawM                (RawM)
 import           System.Metrics
 import qualified System.Metrics.Counter      as Counter
 import qualified System.Metrics.Distribution as Distribution
@@ -133,6 +135,10 @@ instance HasEndpoint (sub :: *) => HasEndpoint (ReqBody' mods cts a :> sub) wher
     getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
     enumerateEndpoints _ = enumerateEndpoints (Proxy :: Proxy sub)
 
+instance HasEndpoint (sub :: *) => HasEndpoint (MultipartForm tag a :> sub) where
+    getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
+    enumerateEndpoints _ = enumerateEndpoints (Proxy :: Proxy sub)
+
 #if MIN_VERSION_servant(0,15,0)
 instance HasEndpoint (sub :: *) => HasEndpoint (StreamBody' mods framing ct a :> sub) where
     getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
@@ -192,6 +198,10 @@ instance HasEndpoint Raw where
     getEndpoint      _ _ = Just (APIEndpoint [] "RAW")
     enumerateEndpoints _ =      [APIEndpoint [] "RAW"]
 
+instance HasEndpoint RawM where
+    getEndpoint      _ _ = Just (APIEndpoint [] "RAW")
+    enumerateEndpoints _ =      [APIEndpoint [] "RAW"]
+
 instance HasEndpoint (sub :: *) => HasEndpoint (CaptureAll (h :: Symbol) a :> sub) where
     getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
     enumerateEndpoints _ = enumerateEndpoints (Proxy :: Proxy sub)
@@ -199,3 +209,7 @@ instance HasEndpoint (sub :: *) => HasEndpoint (CaptureAll (h :: Symbol) a :> su
 instance HasEndpoint (sub :: *) => HasEndpoint (BasicAuth (realm :: Symbol) a :> sub) where
     getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
     enumerateEndpoints _ = enumerateEndpoints (Proxy :: Proxy sub)
+
+instance HasEndpoint (sub :: *) => HasEndpoint (AuthProtect t :> sub) where
+     getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
+     enumerateEndpoints _ = enumerateEndpoints (Proxy :: Proxy sub)

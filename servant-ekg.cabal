@@ -34,6 +34,8 @@ library
     , time                  >=1.6.0.1  && <1.9
     , unordered-containers  >=0.2.9.0  && <0.3
     , wai                   >=3.2.0    && <3.3
+    , servant-multipart
+    , servant-rawm
 
   default-language: Haskell2010
 
@@ -60,7 +62,7 @@ test-suite spec
     , transformers
     , unordered-containers
     , wai
-    , warp                  >=3.2.4 && <3.3
+    , warp
 
 benchmark bench
   type:             exitcode-stdio-1.0
@@ -78,4 +80,4 @@ benchmark bench
     , servant-server
     , text
     , wai
-    , warp            >=3.2.4 && <3.3
+    , warp
