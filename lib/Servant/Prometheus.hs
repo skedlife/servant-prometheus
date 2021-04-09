@@ -9,7 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Servant.Ekg (
+module Servant.Prometheus (
     HasEndpoint(..),
     APIEndpoint(..),
     monitorEndpoints
@@ -17,27 +17,24 @@ module Servant.Ekg (
 
 import           Control.Exception
 import           Control.Monad
-import           Data.Hashable               (Hashable (..))
-import qualified Data.HashMap.Strict         as H
+import           Data.Hashable                      (Hashable (..))
+import qualified Data.HashMap.Strict                as H
 import           Data.Monoid
 import           Data.Proxy
-import           Data.Text                   (Text)
-import qualified Data.Text                   as T
-import qualified Data.Text.Encoding          as T
+import           Data.Text                          (Text)
+import qualified Data.Text                          as T
+import qualified Data.Text.Encoding                 as T
 import           GHC.TypeLits
-import           Network.HTTP.Types          (Method)
+import           Network.HTTP.Types                 (Method)
 import           Network.Wai
 import           Servant.API
-import           Servant.Ekg.Internal
-import           Servant.Multipart           (MultipartForm)
-import           Servant.RawM                (RawM)
-import           System.Metrics
-import qualified System.Metrics.Counter      as Counter
-import qualified System.Metrics.Distribution as Distribution
-import qualified System.Metrics.Gauge        as Gauge
+import           Servant.Multipart                  (MultipartForm)
+import           Servant.Prometheus.Internal
+import           Servant.RawM                       (RawM)
+import           System.Metrics.Prometheus.Registry (Registry)
 
 
-monitorEndpoints :: HasEndpoint api => Proxy api -> Store -> IO Middleware
+monitorEndpoints :: HasEndpoint api => Proxy api -> Registry -> IO Middleware
 monitorEndpoints proxy store = do
     meters <- initializeMetersTable store (enumerateEndpoints proxy)
     return (monitorEndpoints' meters)
@@ -53,7 +50,7 @@ monitorEndpoints proxy store = do
 
             where
                 updateCounters Meters{..} =
-                      responseTimeDistribution metersTime
+                      responseTimeHistogram metersTime
                     . countResponseCodes (metersC2XX, metersC4XX, metersC5XX, metersCXXX)
                     . gaugeInflight metersInflight
 

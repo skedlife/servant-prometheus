@@ -1,14 +1,14 @@
-# servant-ekg
+# servant-promethues
 
-[![Build Status](https://travis-ci.org/haskell-servant/servant-ekg.png)](https://travis-ci.org/haskell-servant/servant-ekg)
+Build based on servant-ekg
 
 # Servant Performance Counters
 
-This package lets you track peformance counters for each of your Servant endpoints using EKG.
+This package lets you track peformance counters for each of your Servant endpoints using promethues.
 
 # Usage
 
-Servant-EKG knows how to handle all official Servant combinators out of the box.
+Servant-promethues knows how to handle all official Servant combinators out of the box.
 
 ## Instrumenting your API
 To use Servant-EKG, you'll need to wrap your WAI application with the Servant-EKG middleware.
