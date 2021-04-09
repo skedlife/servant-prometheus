@@ -87,10 +87,10 @@ bucket =
 initializeMeters :: Text -> Registry -> APIEndpoint -> IO (APIEndpoint, Meters)
 initializeMeters prefix registry endpoint@APIEndpoint{..} = do
     metersInflight <- registerGauge     (Name (prefix <> "_in_flight")) labels registry
-    metersC2XX     <- registerCounter   (Name (prefix <> "_responses_2XX")) labels registry
-    metersC4XX     <- registerCounter   (Name (prefix <> "_responses_4XX")) labels registry
-    metersC5XX     <- registerCounter   (Name (prefix <> "_responses_5XX")) labels registry
-    metersCXXX     <- registerCounter   (Name (prefix <> "_responses_XXX")) labels registry
+    metersC2XX     <- registerCounter   (Name (prefix <> "_responses")) (Labels.addLabel "status" "2XX" labels) registry
+    metersC4XX     <- registerCounter   (Name (prefix <> "_responses")) (Labels.addLabel "status" "4XX" labels) registry
+    metersC5XX     <- registerCounter   (Name (prefix <> "_responses")) (Labels.addLabel "status" "5XX" labels) registry
+    metersCXXX     <- registerCounter   (Name (prefix <> "_responses")) (Labels.addLabel "status" "XXX" labels) registry
     metersTime     <- registerHistogram (Name (prefix <> "_time_ms")) labels bucket registry
 
     return (endpoint, Meters{..})
