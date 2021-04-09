@@ -23,7 +23,7 @@ import qualified System.Metrics.Prometheus.Metric.Counter   as Counter
 import qualified System.Metrics.Prometheus.Metric.Gauge     as Gauge
 import qualified System.Metrics.Prometheus.Metric.Histogram as Histogram
 import           System.Metrics.Prometheus.MetricId         (Name (..))
-import           System.Metrics.Prometheus.Registry
+import           System.Metrics.Prometheus.Concurrent.Registry
 
 -- import           System.Metrics
 -- import qualified System.Metrics.Counter      as Counter
@@ -84,13 +84,13 @@ bucket =
   ]
 
 initializeMeters :: Registry -> APIEndpoint -> IO Meters
-initializeMeters store APIEndpoint{..} = do
-    (metersInflight, _) <- registerGauge     (Name (prefix <> "in_flight")) mempty store
-    (metersC2XX, _)     <- registerCounter   (Name (prefix <> "responses_2XX")) mempty store
-    (metersC4XX, _)     <- registerCounter   (Name (prefix <> "responses_4XX")) mempty store
-    (metersC5XX, _)     <- registerCounter   (Name (prefix <> "responses_5XX")) mempty store
-    (metersCXXX, _)     <- registerCounter   (Name (prefix <> "responses_XXX")) mempty store
-    (metersTime, _)     <- registerHistogram (Name (prefix <> "time_ms")) mempty bucket store
+initializeMeters registry APIEndpoint{..} = do
+    (metersInflight) <- registerGauge     (Name (prefix <> "in_flight")) mempty registry
+    (metersC2XX)     <- registerCounter   (Name (prefix <> "responses_2XX")) mempty registry
+    (metersC4XX)     <- registerCounter   (Name (prefix <> "responses_4XX")) mempty registry
+    (metersC5XX)     <- registerCounter   (Name (prefix <> "responses_5XX")) mempty registry
+    (metersCXXX)     <- registerCounter   (Name (prefix <> "responses_XXX")) mempty registry
+    (metersTime)     <- registerHistogram (Name (prefix <> "time_ms")) mempty bucket registry
 
     return Meters{..}
 
@@ -99,7 +99,7 @@ initializeMeters store APIEndpoint{..} = do
         path   = T.intercalate "_" $ pathSegments <> [T.decodeUtf8 method]
 
 initializeMetersTable :: Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint Meters)
-initializeMetersTable store endpoints = do
-    meters <- mapM (initializeMeters store) endpoints
+initializeMetersTable registry endpoints = do
+    meters  <- mapM (initializeMeters registry) endpoints
 
     return $ H.fromList (zip endpoints meters)

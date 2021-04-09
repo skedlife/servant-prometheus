@@ -31,12 +31,12 @@ import           Servant.API
 import           Servant.Multipart                  (MultipartForm)
 import           Servant.Prometheus.Internal
 import           Servant.RawM                       (RawM)
-import           System.Metrics.Prometheus.Registry (Registry)
+import           System.Metrics.Prometheus.Concurrent.Registry (Registry)
 
 
 monitorEndpoints :: HasEndpoint api => Proxy api -> Registry -> IO Middleware
-monitorEndpoints proxy store = do
-    meters <- initializeMetersTable store (enumerateEndpoints proxy)
+monitorEndpoints proxy registry = do
+    meters <- initializeMetersTable registry (enumerateEndpoints proxy)
     return (monitorEndpoints' meters)
 
     where
