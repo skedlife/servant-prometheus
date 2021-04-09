@@ -9,7 +9,6 @@ import           Control.Exception
 import           Control.Monad
 import           Data.Hashable                                 (Hashable (..))
 import qualified Data.HashMap.Strict                           as H
-import           Data.Maybe                                    (catMaybes)
 import           Data.Monoid
 import           Data.Text                                     (Text)
 import qualified Data.Text                                     as T
@@ -85,7 +84,7 @@ bucket =
   , 10000.0
   ]
 
-initializeMeters :: Registry -> APIEndpoint -> IO (Maybe (APIEndpoint, Meters))
+initializeMeters :: Registry -> APIEndpoint -> IO (APIEndpoint, Meters)
 initializeMeters registry endpoint@APIEndpoint{..} = do
     metersInflight <- registerGauge     (Name ("servant_in_flight")) labels registry
     metersC2XX     <- registerCounter   (Name ("servant_responses_2XX")) labels registry
@@ -94,9 +93,7 @@ initializeMeters registry endpoint@APIEndpoint{..} = do
     metersCXXX     <- registerCounter   (Name ("servant_responses_XXX")) labels registry
     metersTime     <- registerHistogram (Name ("servant_time_ms")) labels bucket registry
 
-    if method == "RAW"
-       then return Nothing
-       else return (Just (endpoint, Meters{..}))
+    return (endpoint, Meters{..})
 
     where
         labels = Labels.fromList [("path", path)]
@@ -106,4 +103,4 @@ initializeMetersTable :: Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint 
 initializeMetersTable registry endpoints = do
     meters  <- mapM (initializeMeters registry) endpoints
 
-    return $ H.fromList (catMaybes meters)
+    return $ H.fromList meters

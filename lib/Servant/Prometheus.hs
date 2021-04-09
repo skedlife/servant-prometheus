@@ -192,12 +192,12 @@ instance ReflectMethod method => HasEndpoint (Stream method status framing ct a)
       where method = reflectMethod (Proxy :: Proxy method)
 
 instance HasEndpoint Raw where
-    getEndpoint      _ _ = Just (APIEndpoint [] "RAW")
-    enumerateEndpoints _ =      [APIEndpoint [] "RAW"]
+    getEndpoint      _ _ = Nothing
+    enumerateEndpoints _ = []
 
 instance HasEndpoint RawM where
-    getEndpoint      _ _ = Just (APIEndpoint [] "RAW")
-    enumerateEndpoints _ =      [APIEndpoint [] "RAW"]
+    getEndpoint      _ _ = Nothing
+    enumerateEndpoints _ =      []
 
 instance HasEndpoint (sub :: *) => HasEndpoint (CaptureAll (h :: Symbol) a :> sub) where
     getEndpoint        _ = getEndpoint        (Proxy :: Proxy sub)
