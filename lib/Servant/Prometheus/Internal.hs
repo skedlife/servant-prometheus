@@ -23,6 +23,7 @@ import qualified System.Metrics.Prometheus.Metric.Counter   as Counter
 import qualified System.Metrics.Prometheus.Metric.Gauge     as Gauge
 import qualified System.Metrics.Prometheus.Metric.Histogram as Histogram
 import           System.Metrics.Prometheus.MetricId         (Name (..))
+import qualified System.Metrics.Prometheus.MetricId         as Labels
 import           System.Metrics.Prometheus.Concurrent.Registry
 
 -- import           System.Metrics
@@ -85,17 +86,17 @@ bucket =
 
 initializeMeters :: Registry -> APIEndpoint -> IO Meters
 initializeMeters registry APIEndpoint{..} = do
-    (metersInflight) <- registerGauge     (Name (prefix <> "in_flight")) mempty registry
-    (metersC2XX)     <- registerCounter   (Name (prefix <> "responses_2XX")) mempty registry
-    (metersC4XX)     <- registerCounter   (Name (prefix <> "responses_4XX")) mempty registry
-    (metersC5XX)     <- registerCounter   (Name (prefix <> "responses_5XX")) mempty registry
-    (metersCXXX)     <- registerCounter   (Name (prefix <> "responses_XXX")) mempty registry
-    (metersTime)     <- registerHistogram (Name (prefix <> "time_ms")) mempty bucket registry
+    (metersInflight) <- registerGauge     (Name ("servant_in_flight")) labels registry
+    (metersC2XX)     <- registerCounter   (Name ("servant_responses_2XX")) labels registry
+    (metersC4XX)     <- registerCounter   (Name ("servant_responses_4XX")) labels registry
+    (metersC5XX)     <- registerCounter   (Name ("servant_responses_5XX")) labels registry
+    (metersCXXX)     <- registerCounter   (Name ("servant_responses_XXX")) labels registry
+    (metersTime)     <- registerHistogram (Name ("servant_time_ms")) labels bucket registry
 
     return Meters{..}
 
     where
-        prefix = "servant_path_" <> path <> "_"
+        labels = Labels.fromList [("path", path)]
         path   = T.intercalate "_" $ pathSegments <> [T.decodeUtf8 method]
 
 initializeMetersTable :: Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint Meters)
