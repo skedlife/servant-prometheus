@@ -73,20 +73,30 @@ responseTimeHistogram dist application request respond =
         let dt = diffUTCTime t2 t1
         Histogram.observe (fromRational $ (*1000) $ toRational dt) dist
 
+bucket =
+  [ 100.0
+  , 200.0
+  , 500.0
+  , 1000.0
+  , 2000.0
+  , 5000.0
+  , 10000.0
+  ]
+
 initializeMeters :: Registry -> APIEndpoint -> IO Meters
 initializeMeters store APIEndpoint{..} = do
     (metersInflight, _) <- registerGauge     (Name (prefix <> "in_flight")) mempty store
-    (metersC2XX, _)     <- registerCounter   (Name (prefix <> "responses.2XX")) mempty store
-    (metersC4XX, _)     <- registerCounter   (Name (prefix <> "responses.4XX")) mempty store
-    (metersC5XX, _)     <- registerCounter   (Name (prefix <> "responses.5XX")) mempty store
-    (metersCXXX, _)     <- registerCounter   (Name (prefix <> "responses.XXX")) mempty store
-    (metersTime, _)     <- registerHistogram (Name (prefix <> "time_ms")) mempty [0.1, 0.2, 0.3, 0.5, 0.6, 1.0, 2.0, 5.0, 10.0] store
+    (metersC2XX, _)     <- registerCounter   (Name (prefix <> "responses_2XX")) mempty store
+    (metersC4XX, _)     <- registerCounter   (Name (prefix <> "responses_4XX")) mempty store
+    (metersC5XX, _)     <- registerCounter   (Name (prefix <> "responses_5XX")) mempty store
+    (metersCXXX, _)     <- registerCounter   (Name (prefix <> "responses_XXX")) mempty store
+    (metersTime, _)     <- registerHistogram (Name (prefix <> "time_ms")) mempty bucket store
 
     return Meters{..}
 
     where
-        prefix = "servant.path." <> path <> "."
-        path   = T.intercalate "." $ pathSegments <> [T.decodeUtf8 method]
+        prefix = "servant_path_" <> path <> "_"
+        path   = T.intercalate "_" $ pathSegments <> [T.decodeUtf8 method]
 
 initializeMetersTable :: Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint Meters)
 initializeMetersTable store endpoints = do
