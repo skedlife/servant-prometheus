@@ -7,24 +7,25 @@ module Servant.Prometheus.Internal where
 
 import           Control.Exception
 import           Control.Monad
-import           Data.Hashable                              (Hashable (..))
-import qualified Data.HashMap.Strict                        as H
+import           Data.Hashable                                 (Hashable (..))
+import qualified Data.HashMap.Strict                           as H
+import           Data.Maybe                                    (catMaybes)
 import           Data.Monoid
-import           Data.Text                                  (Text)
-import qualified Data.Text                                  as T
-import qualified Data.Text.Encoding                         as T
+import           Data.Text                                     (Text)
+import qualified Data.Text                                     as T
+import qualified Data.Text.Encoding                            as T
 import           Data.Time.Clock
-import           GHC.Generics                               (Generic)
-import           Network.HTTP.Types                         (Method,
-                                                             Status (..))
-import           Network.Wai                                (Middleware,
-                                                             responseStatus)
-import qualified System.Metrics.Prometheus.Metric.Counter   as Counter
-import qualified System.Metrics.Prometheus.Metric.Gauge     as Gauge
-import qualified System.Metrics.Prometheus.Metric.Histogram as Histogram
-import           System.Metrics.Prometheus.MetricId         (Name (..))
-import qualified System.Metrics.Prometheus.MetricId         as Labels
+import           GHC.Generics                                  (Generic)
+import           Network.HTTP.Types                            (Method,
+                                                                Status (..))
+import           Network.Wai                                   (Middleware,
+                                                                responseStatus)
 import           System.Metrics.Prometheus.Concurrent.Registry
+import qualified System.Metrics.Prometheus.Metric.Counter      as Counter
+import qualified System.Metrics.Prometheus.Metric.Gauge        as Gauge
+import qualified System.Metrics.Prometheus.Metric.Histogram    as Histogram
+import           System.Metrics.Prometheus.MetricId            (Name (..))
+import qualified System.Metrics.Prometheus.MetricId            as Labels
 
 -- import           System.Metrics
 -- import qualified System.Metrics.Counter      as Counter
@@ -84,16 +85,18 @@ bucket =
   , 10000.0
   ]
 
-initializeMeters :: Registry -> APIEndpoint -> IO Meters
-initializeMeters registry APIEndpoint{..} = do
-    (metersInflight) <- registerGauge     (Name ("servant_in_flight")) labels registry
-    (metersC2XX)     <- registerCounter   (Name ("servant_responses_2XX")) labels registry
-    (metersC4XX)     <- registerCounter   (Name ("servant_responses_4XX")) labels registry
-    (metersC5XX)     <- registerCounter   (Name ("servant_responses_5XX")) labels registry
-    (metersCXXX)     <- registerCounter   (Name ("servant_responses_XXX")) labels registry
-    (metersTime)     <- registerHistogram (Name ("servant_time_ms")) labels bucket registry
+initializeMeters :: Registry -> APIEndpoint -> IO (Maybe (APIEndpoint, Meters))
+initializeMeters registry endpoint@APIEndpoint{..} = do
+    metersInflight <- registerGauge     (Name ("servant_in_flight")) labels registry
+    metersC2XX     <- registerCounter   (Name ("servant_responses_2XX")) labels registry
+    metersC4XX     <- registerCounter   (Name ("servant_responses_4XX")) labels registry
+    metersC5XX     <- registerCounter   (Name ("servant_responses_5XX")) labels registry
+    metersCXXX     <- registerCounter   (Name ("servant_responses_XXX")) labels registry
+    metersTime     <- registerHistogram (Name ("servant_time_ms")) labels bucket registry
 
-    return Meters{..}
+    if method == "RAW"
+       then return Nothing
+       else return (Just (endpoint, Meters{..}))
 
     where
         labels = Labels.fromList [("path", path)]
@@ -103,4 +106,4 @@ initializeMetersTable :: Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint 
 initializeMetersTable registry endpoints = do
     meters  <- mapM (initializeMeters registry) endpoints
 
-    return $ H.fromList (zip endpoints meters)
+    return $ H.fromList (catMaybes meters)
