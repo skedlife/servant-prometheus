@@ -84,14 +84,14 @@ bucket =
   , 10000.0
   ]
 
-initializeMeters :: Registry -> APIEndpoint -> IO (APIEndpoint, Meters)
-initializeMeters registry endpoint@APIEndpoint{..} = do
-    metersInflight <- registerGauge     (Name ("servant_in_flight")) labels registry
-    metersC2XX     <- registerCounter   (Name ("servant_responses_2XX")) labels registry
-    metersC4XX     <- registerCounter   (Name ("servant_responses_4XX")) labels registry
-    metersC5XX     <- registerCounter   (Name ("servant_responses_5XX")) labels registry
-    metersCXXX     <- registerCounter   (Name ("servant_responses_XXX")) labels registry
-    metersTime     <- registerHistogram (Name ("servant_time_ms")) labels bucket registry
+initializeMeters :: Text -> Registry -> APIEndpoint -> IO (APIEndpoint, Meters)
+initializeMeters prefix registry endpoint@APIEndpoint{..} = do
+    metersInflight <- registerGauge     (Name (prefix <> "_servant_in_flight")) labels registry
+    metersC2XX     <- registerCounter   (Name (prefix <> "_servant_responses_2XX")) labels registry
+    metersC4XX     <- registerCounter   (Name (prefix <> "_servant_responses_4XX")) labels registry
+    metersC5XX     <- registerCounter   (Name (prefix <> "_servant_responses_5XX")) labels registry
+    metersCXXX     <- registerCounter   (Name (prefix <> "_servant_responses_XXX")) labels registry
+    metersTime     <- registerHistogram (Name (prefix <> "_servant_time_ms")) labels bucket registry
 
     return (endpoint, Meters{..})
 
@@ -99,8 +99,8 @@ initializeMeters registry endpoint@APIEndpoint{..} = do
         labels = Labels.fromList [("path", path)]
         path   = T.intercalate "_" $ pathSegments <> [T.decodeUtf8 method]
 
-initializeMetersTable :: Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint Meters)
-initializeMetersTable registry endpoints = do
-    meters  <- mapM (initializeMeters registry) endpoints
+initializeMetersTable :: Text -> Registry -> [APIEndpoint] -> IO (H.HashMap APIEndpoint Meters)
+initializeMetersTable prefix registry endpoints = do
+    meters  <- mapM (initializeMeters prefix registry) endpoints
 
     return $ H.fromList meters

@@ -34,9 +34,9 @@ import           Servant.RawM                       (RawM)
 import           System.Metrics.Prometheus.Concurrent.Registry (Registry)
 
 
-monitorEndpoints :: HasEndpoint api => Proxy api -> Registry -> IO Middleware
-monitorEndpoints proxy registry = do
-    meters <- initializeMetersTable registry (enumerateEndpoints proxy)
+monitorEndpoints :: HasEndpoint api => Text -> Proxy api -> Registry -> IO Middleware
+monitorEndpoints prefix proxy registry = do
+    meters <- initializeMetersTable prefix registry (enumerateEndpoints proxy)
     return (monitorEndpoints' meters)
 
     where
